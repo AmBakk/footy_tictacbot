@@ -1,79 +1,72 @@
-def evaluate_board(board, player):
-    """
-    Evaluates the current state of the board and returns the score for the given player.
-    """
-    # Check rows
-    for i in range(0, 9, 3):
-        if board[i] == board[i + 1] == board[i + 2] == player:
-            return 10
-        elif board[i] == board[i + 1] == board[i + 2] != '-':
-            return -10
+def check_win(board_state, symbol):
+    win_conditions = [
+        (0, 1, 2), (3, 4, 5), (6, 7, 8),
+        (0, 3, 6), (1, 4, 7), (2, 5, 8),
+        (0, 4, 8), (2, 4, 6)
+    ]
 
-    # Check columns
-    for i in range(3):
-        if board[i] == board[i + 3] == board[i + 6] == player:
-            return 10
-        elif board[i] == board[i + 3] == board[i + 6] != '-':
-            return -10
-
-    # Check diagonals
-    if board[0] == board[4] == board[8] == player:
-        return 10
-    elif board[0] == board[4] == board[8] != '-':
-        return -10
-    if board[2] == board[4] == board[6] == player:
-        return 10
-    elif board[2] == board[4] == board[6] != '-':
-        return -10
-
-    # No winner yet
-    return 0
+    for condition in win_conditions:
+        if board_state[condition[0]] == board_state[condition[1]] == board_state[condition[2]] == symbol:
+            return True
+    return False
 
 
-def minimax(board, depth, is_maximizing, player):
-    """
-    Implements the minimax algorithm to find the best move for the given player.
-    """
-    score = evaluate_board(board, player)
-    if score == 10:
-        return score
-    if score == -10:
-        return score
-    if depth == 0:
+def is_board_full(board_state):
+    return "" not in board_state
+
+
+def minimax(board_state, depth, is_maximizing, user_symbol, opponent_symbol):
+    if check_win(board_state, user_symbol):
+        return 1
+    if check_win(board_state, opponent_symbol):
+        return -1
+    if is_board_full(board_state):
         return 0
 
     if is_maximizing:
         best_score = -float('inf')
-        for i in range(9):
-            if board[i] == '-':
-                board[i] = player
-                score = minimax(board, depth - 1, False, 'O' if player == 'X' else 'X')
-                board[i] = '-'
-                best_score = max(best_score, score)
+        for i in range(len(board_state)):
+            if board_state[i] == "":
+                board_state[i] = user_symbol
+                score = minimax(board_state, depth + 1, False, user_symbol, opponent_symbol)
+                board_state[i] = ""
+                best_score = max(score, best_score)
         return best_score
+
     else:
         best_score = float('inf')
-        for i in range(9):
-            if board[i] == '-':
-                board[i] = 'O' if player == 'X' else 'X'
-                score = minimax(board, depth - 1, True, player)
-                board[i] = '-'
-                best_score = min(best_score, score)
+        for i in range(len(board_state)):
+            if board_state[i] == "":
+                board_state[i] = opponent_symbol
+                score = minimax(board_state, depth + 1, True, user_symbol, opponent_symbol)
+                board_state[i] = ""
+                best_score = min(score, best_score)
         return best_score
 
 
-def get_best_move(board, player):
+def find_best_move(board_state, user_symbol):
     """
-    Finds the best move for the given player using the minimax algorithm.
+    Finds the best move using the Minimax algorithm.
+    :param board_state: Current board as a list (e.g., ["", "", "X", "O", "", "", "", "", ""])
+    :param user_symbol: The symbol of the user (e.g., "X")
+    :param opponent_symbol: The symbol of the opponent (e.g., "O")
+    :return: Index of the best move
     """
+    if user_symbol == "X":
+        opponent_symbol = "O"
+    else:
+        opponent_symbol = "X"
+
     best_score = -float('inf')
     best_move = None
-    for i in range(9):
-        if board[i] == '-':
-            board[i] = player
-            score = minimax(board, 9, False, 'O' if player == 'X' else 'X')
-            board[i] = '-'
+
+    for i in range(len(board_state)):
+        if board_state[i] == "":  # Check available spots
+            board_state[i] = user_symbol  # Make the move
+            score = minimax(board_state, 0, False, user_symbol, opponent_symbol)
+            board_state[i] = ""  # Undo the move
             if score > best_score:
                 best_score = score
                 best_move = i
+    print(f"Chosen square : {best_move}")
     return best_move

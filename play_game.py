@@ -64,6 +64,7 @@ game_squares = {
 opp_turn_over = False
 user_symbol = None
 opp_symbol = None
+prev_conditions = None
 
 wins = 0
 losses = 0
@@ -75,19 +76,25 @@ while True:
 
     if check_element_presence(driver, By.XPATH, my_turn):
         print("YOUR TURN")
+
+        # new_round, prev_conditions = check_new_round(driver, previous_conditions=prev_conditions)
+
         if user_symbol is None and opp_symbol is None:
             user_symbol = 'X'
             print("You are X's")
             opp_symbol = 'O'
 
-        user_turn(driver, game_squares)
+        user_turn(driver, game_squares, user_symbol)
 
-        previous_user_score, winning, wins, losses = check_winner(driver, previous_user_score, wins, losses)
+        previous_user_score, previous_opponent_score, winning, wins, losses = check_winner(driver, previous_user_score, wins, losses)
 
         opp_turn_over = False
 
     elif check_element_presence(driver, By.XPATH, opp_turn) and not opp_turn_over:
         print("THEIR TURN")
+
+        # new_round, prev_conditions = check_new_round(driver, previous_conditions=prev_conditions)
+
         if user_symbol is None and opp_symbol is None:
             user_symbol = 'O'
             print("You are O's")
@@ -96,6 +103,8 @@ while True:
         opp_turn_over = True
 
     elif not check_element_presence(driver, By.XPATH, opp_turn) and not check_element_presence(driver, By.XPATH, my_turn):
+        user_symbol = None
+        opp_symbol = None
         print("Game has not started yet")
         start_game = driver.find_elements(By.XPATH,
                                           "//button[contains(@class, 'rounded-md') and contains(text(), 'Without "

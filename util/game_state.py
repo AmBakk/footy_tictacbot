@@ -105,9 +105,30 @@ def check_winner(driver, previous_user_score, wins, losses):
         wins += 1
         print(f"Opponent left. You Won!\n{wins} - {losses}")
 
-    return user_score, winning, wins, losses
+    return user_score, opponent_score, winning, wins, losses
 
 
 def check_element_presence(driver, by, path):
     elements = driver.find_elements(by, path)
     return len(elements) > 0
+
+
+# def check_new_round(driver, previous_conditions=None):
+#     if previous_conditions is None:
+#         previous_conditions = []
+#
+#     new_conditions = []
+#     cond_elems = driver.find_elements(By.XPATH, "//div[contains(@class, 'font-bebas-neue') and (contains(@class, "
+#                                                 "'text-xl') or contains(@class, 'text-center'))]")
+#
+#     for cond in cond_elems:
+#         new_conditions.append(cond.text)
+#
+#     if previous_conditions != new_conditions:
+#         print(previous_conditions, new_conditions)
+#         print('new round')
+#         return True, new_conditions.copy()
+#
+#     print('no new round')
+#     return False, previous_conditions
+
