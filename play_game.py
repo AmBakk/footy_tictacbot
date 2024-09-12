@@ -1,22 +1,14 @@
 import time
 
-from selenium.common import NoSuchElementException
-
-from game_state import get_game_state
+from util.game_state import check_winner, check_element_presence, open_game
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from util.user_turn import user_turn
 
 driver = webdriver.Chrome()
 
-driver.get('https://playfootball.games/footy-tic-tac-toe/random/')
-
-time.sleep(5)
-
-consent_button = driver.find_elements(By.XPATH,
-                                      "//button[contains(@class, 'fc-button fc-cta-consent fc-primary-button')]")
-if len(consent_button) > 0:
-    consent_button[0].click()
+open_game(driver)
 
 my_turn = "//div[contains(@class, 'flex items-center') and contains(text(), 'YOUR TURN')]"  # XPATH for user turn
 opp_turn = "//div[contains(@class, 'flex items-center') and contains(text(), 'THEIR TURN')]"  # XPATH for opponent turn
@@ -69,101 +61,41 @@ game_squares = {
     }
 }
 
-
-def check_element_presence(by, path):
-    elements = driver.find_elements(by, path)
-    return len(elements) > 0
-
-
 opp_turn_over = False
+user_symbol = None
+opp_symbol = None
+
+wins = 0
+losses = 0
+previous_user_score = 0
+previous_opponent_score = 0
 
 while True:
     time.sleep(0.5)
 
-    try:
-        close_button = driver.find_element(By.XPATH, '//g[@id="assets"]/polygon')
-        close_button.click()
-    except NoSuchElementException:
-        pass
-
-    if check_element_presence(By.XPATH, my_turn):
+    if check_element_presence(driver, By.XPATH, my_turn):
         print("YOUR TURN")
+        if user_symbol is None and opp_symbol is None:
+            user_symbol = 'X'
+            print("You are X's")
+            opp_symbol = 'O'
 
-        cond_elems = driver.find_elements(By.XPATH, "//div[contains(@class, 'font-bebas-neue') and (contains(@class, "
-                                                    "'text-xl') or contains(@class, 'text-center'))]")
+        user_turn(driver, game_squares)
 
-        all_conditions = []
-        game_state = []
-
-        buttons = driver.find_elements(By.XPATH, "//button[contains(@id, 'headlessui-popover-button-')]")
-        id_list = []
-
-        for button in buttons:
-            button_id = button.get_attribute("id")
-            id_list.append(button_id)
-
-        for key, square in game_squares.items():
-            square['XPath'] = id_list[int(key)]
-            try:
-                play_button = driver.find_element(By.ID, square["XPath"])
-                play_button.screenshot(f'board/square_{key}.png')
-                game_state.append(get_game_state(square["Path"]))
-            except NoSuchElementException:
-                print("Play Button not found.")
-        print(game_state)
-
-        for cond_elem in cond_elems:
-            all_conditions.append(cond_elem.text)
-
-        for key, square in game_squares.items():
-            if check_element_presence(By.ID, square["XPath"]):
-                play_button = driver.find_element(By.ID, square["XPath"])
-                if not play_button.get_attribute("disabled"):
-                    con_one = square["Conditions"][0]
-                    con_two = square["Conditions"][1]
-                    condition = (all_conditions[con_one], all_conditions[con_two])
-                    print(condition)
-                    selected_button = play_button
-                    play_button.click()
-                    break
-
-        try:
-            input_box = driver.find_element(By.XPATH, "//input[@placeholder='Search player...']")
-            input_box.send_keys('Zinedine Zidane')
-            first_option = driver.find_element(By.XPATH, "//li[@role='option' and @data-suggestion-index='0']")
-            first_option.click()
-        except:
-            print("Player not found")
+        previous_user_score, winning, wins, losses = check_winner(driver, previous_user_score, wins, losses)
 
         opp_turn_over = False
 
-    elif check_element_presence(By.XPATH, opp_turn) and not opp_turn_over:
+    elif check_element_presence(driver, By.XPATH, opp_turn) and not opp_turn_over:
         print("THEIR TURN")
-
-        game_state = []
-
-        try:
-            player_name = selected_button.find_element(By.XPATH, ".//div[@class='text-white text-md font-bebas-neue "
-                                                                 "truncate max-w-full h-6 mt-1 max-w-full']")
-            print(player_name.text)
-        except:
-            print("Player not found")
-
-        for key, square in game_squares.items():
-            try:
-                play_button = driver.find_element(By.ID, square["XPath"])
-                play_button.screenshot(f'board/square_{key}.png')
-                game_state.append(get_game_state(square["Path"]))
-            except NoSuchElementException:
-                print("Not found")
-        print(game_state)
+        if user_symbol is None and opp_symbol is None:
+            user_symbol = 'O'
+            print("You are O's")
+            opp_symbol = 'X'
 
         opp_turn_over = True
 
-        # if player_input.lower() in player_name.text.lower():
-        #     symbol =
-
-    elif not check_element_presence(By.XPATH, opp_turn) and not check_element_presence(By.XPATH, my_turn):
+    elif not check_element_presence(driver, By.XPATH, opp_turn) and not check_element_presence(driver, By.XPATH, my_turn):
         print("Game has not started yet")
         start_game = driver.find_elements(By.XPATH,
                                           "//button[contains(@class, 'rounded-md') and contains(text(), 'Without "
